@@ -11,7 +11,13 @@ created: 2026-08-28
 
 # ML & AI Notes
 
-This site collects the ideas I learn while studying machine learning and artificial intelligence. It includes concept notes, course summaries, paper reviews, and project records.
+Hi, and welcome. These are my notes on the foundations of machine learning and artificial intelligence.
+
+I started this collection to help myself remember ideas and review the basics. It is closer to a learning diary than a textbook. The tone is casual, and the structure follows the questions I encounter while learning. Most entries focus on fundamental topics.
+
+Complete beginners may find it helpful to learn the basic vocabulary and workflow first. Readers with advanced experience may find many entries familiar. I am still at the beginning of my PhD, and this site records how my understanding develops over time.
+
+My main goal is to make my own thinking clearer. If these notes also help you review a concept or find a useful connection, I will be glad.
 
 > [!tip] How to read
 > Start with a knowledge map, or use the file explorer, full text search, tags, and graph to browse freely.
