@@ -4,6 +4,8 @@ description: Notes on KL divergence in the context of variational autoencoders.
 tags:
   - ml/information-theory
   - dl/vae
+aliases:
+  - en/concepts/kl-divergence
 lang: en-US
 status: seedling
 publish: true

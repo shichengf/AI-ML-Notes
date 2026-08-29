@@ -11,6 +11,6 @@ created: 2026-08-28
 
 # Knowledge Maps
 
-Knowledge maps connect concepts, papers, and project records from different sections.
+Knowledge maps organize the connections between individual notes.
 
 - [[en/maps/machine-learning|Machine learning roadmap]]
