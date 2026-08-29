@@ -26,23 +26,12 @@ $$
 
 ### How to read this formula
 
-Do not start by calculating it. First identify the role of each symbol:
+Two pieces of notation are worth clarifying:
 
 | Symbol | What it means |
 | --- | --- |
-| $D_{\mathrm{KL}}$ | $D$ stands for divergence, a difference between two distributions. The subscript $\mathrm{KL}$ names the divergence. It is not another variable in the calculation. |
-| $P\parallel Q$ | Read this as “$P$ relative to $Q$.” $P$ comes first and $Q$ comes second, so the order matters. $\parallel$ only separates the two distributions. It is not an absolute value or a conditional probability. |
-| $P$ and $p(x)$ | Uppercase $P$ denotes the whole distribution. Lowercase $p(x)$ is the probability or probability density that $P$ assigns to one particular value $x$. The same relationship holds between $Q$ and $q(x)$. |
-| $x$ | One possible value of the random variable. For a die roll, $x$ could be any number from 1 to 6. |
-| $\sum_x$ | Go through every possible value of $x$ and add the terms. The $x$ under the summation sign tells us what is being summed over. |
-| $\log\frac{p(x)}{q(x)}$ | Compare the probabilities that $P$ and $Q$ assign to the same $x$. This term is close to zero when the two probabilities are close. |
 | $\mathbb{E}_{x\sim P}$ | Take a weighted average over all outcomes. The subscript $x\sim P$ says that $x$ follows $P$, so $P$ supplies the weights in the average. |
 | $Q_\theta$ or $q_\phi$ | $\theta$ and $\phi$ denote model parameters that control a distribution. Training changes these parameters. |
-| $P_{\mathrm{data}}$ | The subscript $\mathrm{data}$ labels the role of the distribution. It is not multiplication. Notation such as $P_{\mathrm{teacher}}$ works the same way. |
-| $q_\phi(z\mid x)$ | The distribution of $z$, given $x$, is controlled by parameters $\phi$. The vertical bar $\mid$ means “given.” |
-
-> [!tip] Read it in one sentence
-> Let $x$ occur according to $P$, compare the probabilities that $P$ and $Q$ assign to the same $x$, and average those comparisons using $P$ as the weight.
 
 For continuous random variables, the sum becomes an integral:
 
