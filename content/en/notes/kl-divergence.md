@@ -53,10 +53,12 @@ $$
 
 Inverting the ratio changes the sign inside the logarithm. If the expectation remained under $P$, the result would only be the negative of forward KL and would not be a divergence. Reverse KL also changes the weighting distribution from $P$ to $Q$. This combination produces its different behavior.
 
-| Direction | Expectation is weighted by | Required support condition | Typical behavior |
-| --- | --- | --- | --- |
-| $D_{\mathrm{KL}}(P\parallel Q)$ | $P$ | $p(x)>0$ requires $q(x)>0$ | Mass-covering |
-| $D_{\mathrm{KL}}(Q\parallel P)$ | $Q$ | $q(x)>0$ requires $p(x)>0$ | Mode-seeking |
+> [!important] Core intuition
+>
+> | Direction | Main penalty | Typical behavior |
+> | --- | --- | --- |
+> | Forward KL, $D_{\mathrm{KL}}(P\parallel Q)$ | **Missing regions that are real under $P$** | Mass-covering |
+> | Reverse KL, $D_{\mathrm{KL}}(Q\parallel P)$ | **Assigning probability to regions that are unrealistic under $P$** | Mode-seeking |
 
 For forward KL, a region where $p(x)$ is large but $q(x)$ is close to zero creates a large cost. Missing a mode of $P$ can make the divergence infinite. A region where $p(x)$ is small receives little weight, even if $q(x)$ is relatively large. This makes extra coverage cheap, but not completely free. Probability assigned there must come from somewhere else because $Q$ still has to sum or integrate to one.
 
