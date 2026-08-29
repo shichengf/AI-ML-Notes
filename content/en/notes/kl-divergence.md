@@ -66,6 +66,54 @@ For reverse KL, placing probability where $p(x)$ is close to zero creates a larg
 
 This is why forward KL is often called mass-covering and reverse KL is often called mode-seeking. These labels describe common behavior when a restricted distribution $Q$ approximates a fixed target $P$. They are not universal guarantees for every optimization problem.
 
+### Which direction do we usually optimize?
+
+Forward KL is natural when we can draw samples from the target distribution $P$. It can be written as
+
+$$
+D_{\mathrm{KL}}(P\parallel Q)
+=\mathbb{E}_{x\sim P}[\log p(x)]
+-\mathbb{E}_{x\sim P}[\log q(x)].
+$$
+
+The first term does not depend on $Q$. Therefore, samples $x_i\sim P$ are enough to estimate the part that matters for optimization:
+
+$$
+-\mathbb{E}_{x\sim P}[\log q(x)]
+\approx -\frac{1}{N}\sum_{i=1}^{N}\log q(x_i).
+$$
+
+This is why maximum likelihood and supervised cross-entropy usually have the forward direction. They strongly penalize the case where the data distribution has high probability but the model assigns low probability.
+
+Reverse KL is natural in a different computational setting. Suppose we can sample from $Q$, while the target is known only through an unnormalized density
+
+$$
+p(x)=\frac{\widetilde{p}(x)}{Z}.
+$$
+
+Then
+
+$$
+D_{\mathrm{KL}}(Q\parallel P)
+=\mathbb{E}_{x\sim Q}[\log q(x)-\log\widetilde{p}(x)]
++\log Z.
+$$
+
+The unknown normalizing constant $\log Z$ does not depend on $Q$. We can therefore optimize reverse KL by sampling from $Q$ without first solving the difficult problem of sampling from $P$.
+
+> [!tip] Practical rule
+> Use forward KL when target samples from $P$ are available. Use reverse KL when sampling from the approximation $Q$ is easy and the target $P$ can be evaluated up to a normalizing constant.
+
+| Setting | Common direction | Why this direction is practical |
+| --- | --- | --- |
+| Maximum likelihood and supervised learning | Forward, $D_{\mathrm{KL}}(P_{\mathrm{data}}\parallel Q_\theta)$ | The dataset provides samples from $P_{\mathrm{data}}$. |
+| Knowledge distillation | Forward, $D_{\mathrm{KL}}(P_{\mathrm{teacher}}\parallel Q_{\mathrm{student}})$ | The teacher provides the target probabilities. |
+| Variational inference | Reverse, $D_{\mathrm{KL}}(Q_\phi\parallel P_{\mathrm{posterior}})$ | We can sample from $Q_\phi$ and evaluate the posterior up to its normalizing constant. |
+| Variational autoencoders | Reverse, $D_{\mathrm{KL}}(q_\phi(z\mid x)\parallel p_\theta(z\mid x))$ | The ELBO avoids direct sampling from the intractable true posterior. |
+| KL-regularized RL and RLHF | Reverse form, $D_{\mathrm{KL}}(\pi_\theta\parallel\pi_{\mathrm{ref}})$ | Samples come from the learned policy, while the reference model scores the same outputs. |
+
+The most classical reverse-KL example is variational inference. A VAE is one instance of it. RLHF also commonly uses a reverse-form KL regularizer relative to a reference policy, although it is not trying to reproduce the reference exactly because reward optimization pulls the learned policy away from it. PPO itself should not be treated as another name for reverse KL.
+
 ### Mathematical properties
 
 Both directions are nonnegative and equal zero only when the two distributions agree almost everywhere. Neither direction is a distance metric because KL is not symmetric and does not satisfy the triangle inequality.
