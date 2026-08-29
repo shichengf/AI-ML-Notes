@@ -3,6 +3,7 @@ title: 核心概念
 description: ML 与 AI 中可独立理解和复用的原子化概念笔记。
 tags:
   - notes/concepts
+lang: zh-CN
 publish: true
 status: seedling
 created: 2026-08-28

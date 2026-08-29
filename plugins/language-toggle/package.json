@@ -1,0 +1,37 @@
+{
+  "name": "@shichengf/language-toggle",
+  "version": "1.0.0",
+  "description": "A bilingual page switcher for the ML and AI notes site.",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./index.js",
+    "./components": "./index.js",
+    "./package.json": "./package.json"
+  },
+  "main": "./index.js",
+  "sideEffects": false,
+  "peerDependencies": {
+    "@quartz-community/utils": "^0.1.0",
+    "preact": "^10.0.0"
+  },
+  "quartz": {
+    "name": "language-toggle",
+    "displayName": "Language Toggle",
+    "description": "Switches between matching Chinese and English notes.",
+    "category": "component",
+    "version": "1.0.0",
+    "quartzVersion": ">=5.0.0",
+    "dependencies": [],
+    "defaultOrder": 50,
+    "defaultEnabled": true,
+    "defaultOptions": {},
+    "components": {
+      "LanguageToggle": {
+        "displayName": "Language Toggle",
+        "defaultPosition": "header",
+        "defaultPriority": 10
+      }
+    }
+  }
+}

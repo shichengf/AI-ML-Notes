@@ -3,6 +3,7 @@ title: 论文阅读
 description: AI 与机器学习论文的阅读、复现和批判性总结。
 tags:
   - notes/papers
+lang: zh-CN
 publish: true
 status: seedling
 created: 2026-08-28

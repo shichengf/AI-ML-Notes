@@ -3,6 +3,7 @@ title: 知识地图
 description: 按主题组织 ML 与 AI 知识的导航入口。
 tags:
   - map
+lang: zh-CN
 publish: true
 status: growing
 created: 2026-08-28

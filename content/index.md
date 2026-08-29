@@ -3,6 +3,7 @@ title: ML & AI Notes
 description: 记录机器学习、深度学习与人工智能工程实践的长期知识库。
 tags:
   - site/home
+lang: zh-CN
 publish: true
 status: evergreen
 created: 2026-08-28

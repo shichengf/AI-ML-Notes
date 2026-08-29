@@ -4,6 +4,7 @@ description: 从数学基础、经典机器学习到深度学习和工程实践�
 tags:
   - map
   - ml/fundamentals
+lang: zh-CN
 publish: true
 status: seedling
 created: 2026-08-28

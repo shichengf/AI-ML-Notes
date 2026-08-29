@@ -3,6 +3,7 @@ title: 实验记录
 description: 可复现的模型训练、对比实验与结果分析。
 tags:
   - notes/experiments
+lang: zh-CN
 publish: true
 status: seedling
 created: 2026-08-28

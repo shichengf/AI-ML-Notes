@@ -40,6 +40,11 @@ configuration:
         highlight: rgba(94, 234, 212, 0.12)
         textHighlight: "#fbbf2466"
 plugins:
+  - source: "@shichengf/language-toggle"
+    enabled: true
+    layout:
+      position: header
+      priority: 10
   - source: "@quartz-community/created-modified-date"
     enabled: true
     options:
