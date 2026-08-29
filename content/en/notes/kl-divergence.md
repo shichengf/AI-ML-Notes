@@ -76,7 +76,24 @@ $$
 
 The first term does not depend on $Q$. Samples from $P$ are enough to estimate the second term. This is why maximum likelihood and supervised cross-entropy usually have the forward direction. They strongly penalize the case where the data distribution has high probability but the model assigns low probability.
 
-Reverse KL is natural in a different computational setting. Suppose we can sample from $Q$, while the target is known only through an unnormalized density
+Reverse KL is natural in a different computational setting. Suppose we can sample from $Q$, while the target is known only through an unnormalized density.
+
+“Unnormalized” means that we can calculate a relative score $\widetilde p(x)$ for each candidate value, but we have not converted all scores into probabilities that sum to one.
+
+> [!example] A simple example
+> Suppose three candidate values have scores 2, 5, and 3. Dividing them by their total $Z=10$ gives the probabilities 0.2, 0.5, and 0.3. Even without knowing $Z$, we can still tell that the second candidate is more plausible than the first because $5>2$.
+
+If there are millions of candidates, or if $x$ is a continuous high-dimensional variable, summing or integrating every score can be difficult. We may be able to evaluate $\widetilde p(x)$ for one chosen $x$ without being able to calculate the normalizing constant $Z$.
+
+A Bayesian posterior is a common example. For a chosen latent value $z$, we can calculate
+
+$$
+\widetilde p(z)=p(x\mid z)p(z),
+$$
+
+but obtaining the posterior $p(z\mid x)$ requires summing or integrating over every possible $z$. That difficult total is the normalizing constant.
+
+In general, the normalized target distribution can be written as
 
 $$
 p(x)=\frac{\widetilde{p}(x)}{Z}.
