@@ -65,6 +65,91 @@ const styles = `
 }
 `
 
+const uiTranslationScript = `
+function setSiteText(selector, value) {
+  const element = document.querySelector(selector)
+  if (element) element.textContent = value
+}
+
+function setSiteAttribute(selector, name, value) {
+  const element = document.querySelector(selector)
+  if (element) element.setAttribute(name, value)
+}
+
+function translateSiteInterface() {
+  const slug = document.body?.dataset?.slug ?? ""
+  const englishPage = slug === "en/index" || slug.startsWith("en/")
+
+  const messages = englishPage
+    ? {
+        search: "Search",
+        searchContent: "Search content...",
+        explore: "Explore",
+        colorTheme: "Color theme",
+        darkMode: "Dark mode",
+        lightMode: "Light mode",
+        readerMode: "Reader mode",
+        home: "Home",
+        properties: "Properties",
+      }
+    : {
+        search: "搜索",
+        searchContent: "搜索内容...",
+        explore: "探索",
+        colorTheme: "颜色主题",
+        darkMode: "暗色模式",
+        lightMode: "亮色模式",
+        readerMode: "阅读模式",
+        home: "首页",
+        properties: "属性",
+      }
+
+  setSiteText(".search-button p", messages.search)
+  setSiteAttribute(".search-button", "aria-label", messages.search)
+  setSiteAttribute(".search-bar", "aria-label", messages.searchContent)
+  setSiteAttribute(".search-bar", "placeholder", messages.searchContent)
+  setSiteText(".title-button.explorer-toggle h2", messages.explore)
+  setSiteAttribute(".mobile-explorer", "aria-label", messages.explore)
+  setSiteAttribute(".darkmode", "aria-label", messages.colorTheme)
+  setSiteText(".darkmode .dayIcon title", messages.darkMode)
+  setSiteText(".darkmode .nightIcon title", messages.lightMode)
+  setSiteAttribute(".darkmode .dayIcon", "aria-label", messages.darkMode)
+  setSiteAttribute(".darkmode .nightIcon", "aria-label", messages.lightMode)
+  setSiteAttribute(".readermode", "aria-label", messages.readerMode)
+  setSiteText(".readermode title", messages.readerMode)
+  setSiteAttribute(".readermode svg", "aria-label", messages.readerMode)
+  setSiteText(".breadcrumb-container .breadcrumb-element:first-child a", messages.home)
+  setSiteText(".note-properties-title", messages.properties)
+
+  document.querySelectorAll(".content-meta time[datetime]").forEach((time) => {
+    const date = new Date(time.getAttribute("datetime"))
+    if (Number.isNaN(date.getTime())) return
+    time.textContent = new Intl.DateTimeFormat(englishPage ? "en-US" : "zh-CN", {
+      year: "numeric",
+      month: englishPage ? "short" : "numeric",
+      day: "numeric",
+    }).format(date)
+  })
+
+  document.querySelectorAll(".content-meta span").forEach((element) => {
+    const count = element.textContent?.match(/\\d+/)?.[0]
+    if (!count) return
+    element.textContent = englishPage ? count + " min read" : count + " 分钟阅读"
+  })
+
+  document.querySelectorAll(".page-listing > p").forEach((element) => {
+    const count = element.textContent?.match(/\\d+/)?.[0]
+    if (!count) return
+    element.textContent = englishPage
+      ? count + " notes in this folder."
+      : "此文件夹下有" + count + "条笔记。"
+  })
+}
+
+document.addEventListener("nav", translateSiteInterface)
+document.addEventListener("render", translateSiteInterface)
+`
+
 export const LanguageToggle = () => {
   const Component = ({ fileData, allFiles }) => {
     const currentSlug = fileData.slug
@@ -115,5 +200,6 @@ export const LanguageToggle = () => {
   }
 
   Component.css = styles
+  Component.afterDOMLoaded = uiTranslationScript
   return Component
 }
