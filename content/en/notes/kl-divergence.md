@@ -107,6 +107,58 @@ For the mechanics of the classic reverse-KL case, see [[en/notes/bayesian-and-va
 
 ### Useful properties
 
+#### Why a computed KL can be negative
+
+A true KL divergence between two normalized distributions cannot be negative. However, the contribution from one value of $x$ can be negative:
+
+$$
+p(x)\log\frac{p(x)}{q(x)}<0
+\qquad\text{when}\qquad
+p(x)<q(x).
+$$
+
+For example, let
+
+$$
+P=(0.25,0.75),
+\qquad
+Q=(0.5,0.5).
+$$
+
+The first contribution is negative:
+
+$$
+0.25\log\frac{0.25}{0.5}\approx -0.1733,
+$$
+
+while the second contribution is positive:
+
+$$
+0.75\log\frac{0.75}{0.5}\approx 0.3041.
+$$
+
+After summing both terms,
+
+$$
+D_{\mathrm{KL}}(P\parallel Q)\approx 0.1308>0.
+$$
+
+The positive and negative local contributions only become a KL divergence after taking the complete expectation.
+
+> [!warning] True KL versus a reported value
+> A true KL cannot be negative. A pointwise contribution, a noisy estimate, or an objective that differs from KL by a constant can be negative.
+
+| What produced the negative value? | What it means |
+| --- | --- |
+| A single sample or token | $\log p(x)-\log q(x)$ can be negative when $q(x)>p(x)$. Only its expectation under $P$ is KL. |
+| A finite Monte Carlo average | The estimator has variance and may fall below zero even though its expectation is nonnegative. More samples should reduce this effect. |
+| An unnormalized target | $\mathbb{E}_Q[\log q-\log\widetilde p]$ equals reverse KL minus $\log Z$. It is allowed to be negative when the missing constant is not restored. |
+| An ELBO implementation | Training code often adds $-D_{\mathrm{KL}}$ to a maximization objective. The logged quantity may be negative KL rather than KL. |
+| Floating-point error | A value that should be near zero can become slightly negative, especially with low precision or subtraction of similar log probabilities. |
+| A density implementation error | Missing normalization, an omitted change-of-variables Jacobian, or inconsistent reduction can mean the computed quantity is not KL. |
+
+Large negative values should not be explained as numerical noise without checking the estimator and normalization. Small negative Monte Carlo estimates can be legitimate, but a closed-form KL formula should normally remain nonnegative apart from tiny floating-point error.
+
 KL also satisfies the data processing inequality. Applying the same deterministic or stochastic transformation to both distributions cannot increase their KL divergence. Coarse observations can hide differences between distributions, but cannot create new ones.
 
 For joint distributions, KL follows a chain rule:
