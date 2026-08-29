@@ -36,6 +36,25 @@ p_\theta(z\mid x)
 =\frac{p_\theta(x\mid z)p(z)}{p_\theta(x)}.
 $$
 
+### How to read Bayes' rule
+
+Read the two sides of the vertical bar first, then inspect the subscripts:
+
+| Symbol | What it means |
+| --- | --- |
+| $x$ | The observed data. When computing the posterior, $x$ is treated as known. |
+| $z$ | The unknown quantity to infer. It may be a parameter, latent variable, or hidden state. |
+| $p(z)$ | The prior distribution of $z$. There is no conditioning bar because it describes our knowledge before observing $x$. |
+| $p_\theta(x\mid z)$ | The likelihood of observing $x$ given $z$. The variable to the left of the bar is being described, while the expression to the right is given. |
+| $p_\theta(z\mid x)$ | The posterior distribution of $z$ after observing $x$. Its conditioning direction differs from $p_\theta(x\mid z)$. |
+| Subscript $\theta$ | Parameters that control the model distribution. The same $\theta$ means that the probabilities come from the same generative model. It is not another random variable. |
+| $p_\theta(x)$ | The evidence, also called the marginal likelihood. It combines the explanations supplied by every possible $z$. |
+| $\int \cdots dz$ | Integrate over every possible value of $z$. The final $dz$ identifies $z$ as the integration variable. A discrete model would use a sum over $z$. |
+| $\propto$ | “Proportional to.” The equality omits a normalizing constant that does not change with $z$. Here, that constant is $p_\theta(x)$. |
+
+> [!tip] Read it in one sentence
+> After observing $x$, the posterior probability of a candidate $z$ depends on whether it was plausible beforehand and whether it can explain the current $x$. The denominator normalizes the results over all candidates.
+
 The evidence is
 
 $$
@@ -70,6 +89,22 @@ q_\phi(z\mid x)
 p_\theta(z\mid x)
 \right).
 $$
+
+### How to read the variational inference objective
+
+| Symbol | What it means |
+| --- | --- |
+| $p_\theta(z\mid x)$ | The true posterior that we want to approximate. $\theta$ contains the generative model parameters. |
+| $q_\phi(z\mid x)$ | The distribution used to approximate the posterior. The letter $q$ marks it as a different distribution, and $\phi$ contains the approximation model parameters. |
+| $\mathcal{Q}$ | The allowed family of approximate distributions, such as all Gaussian distributions with diagonal covariance. A calligraphic capital letter denotes a set of distributions. |
+| $q_\phi\in\mathcal{Q}$ | The current approximation must belong to the selected family $\mathcal{Q}$. The symbol $\in$ means “belongs to.” |
+| $\arg\min$ | Find the object that makes the following objective smallest. It returns the best $q_\phi$, not the minimum KL value. |
+| Superscript $*$ | The best choice after optimization. Thus, $q_\phi^*$ is the best approximation available within the chosen family. |
+| $\mathbb{E}_{q_\phi(z\mid x)}$ | Sample from $q_\phi(z\mid x)$ and take an average. The distribution under the expectation symbol supplies the weights. |
+| $\mathcal{L}_{\mathrm{ELBO}}$ | $\mathcal{L}$ denotes the training objective. The subscript $\mathrm{ELBO}$ names it as the evidence lower bound. |
+
+> [!tip] Read it in one sentence
+> Search within the tractable family $\mathcal{Q}$ for a distribution $q_\phi$ that is as close as possible to the difficult posterior $p_\theta(z\mid x)$.
 
 This is a reverse KL objective. The expectation is taken under $q_\phi$, which is the distribution we know how to sample from. For more about the direction of KL, see [[en/notes/kl-divergence|KL Divergence]].
 
