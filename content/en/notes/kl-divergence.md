@@ -104,15 +104,15 @@ The unknown normalizing constant $\log Z$ does not depend on $Q$. We can therefo
 > [!tip] Practical rule
 > Use forward KL when target samples from $P$ are available. Use reverse KL when sampling from the approximation $Q$ is easy and the target $P$ can be evaluated up to a normalizing constant.
 
-| Setting | Common direction | Why this direction is practical |
-| --- | --- | --- |
-| Maximum likelihood and supervised learning | Forward, $D_{\mathrm{KL}}(P_{\mathrm{data}}\parallel Q_\theta)$ | The dataset provides samples from $P_{\mathrm{data}}$. |
-| Knowledge distillation | Forward, $D_{\mathrm{KL}}(P_{\mathrm{teacher}}\parallel Q_{\mathrm{student}})$ | The teacher provides the target probabilities. |
-| Variational inference | Reverse, $D_{\mathrm{KL}}(Q_\phi\parallel P_{\mathrm{posterior}})$ | We can sample from $Q_\phi$ and evaluate the posterior up to its normalizing constant. |
-| Variational autoencoders | Reverse, $D_{\mathrm{KL}}(q_\phi(z\mid x)\parallel p_\theta(z\mid x))$ | The ELBO avoids direct sampling from the intractable true posterior. |
-| KL-regularized RL and RLHF | Reverse form, $D_{\mathrm{KL}}(\pi_\theta\parallel\pi_{\mathrm{ref}})$ | Samples come from the learned policy, while the reference model scores the same outputs. |
+| Setting                                    | Common direction                                                               | Why this direction is practical                                                          |
+| ------------------------------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Maximum likelihood and supervised learning | Forward, $D_{\mathrm{KL}}(P_{\mathrm{data}}\parallel Q_\theta)$                | The dataset provides samples from $P_{\mathrm{data}}$.                                   |
+| Knowledge distillation                     | Forward, $D_{\mathrm{KL}}(P_{\mathrm{teacher}}\parallel Q_{\mathrm{student}})$ | The teacher provides the target probabilities.                                           |
+| Variational inference                      | Reverse, $D_{\mathrm{KL}}(Q_\phi\parallel P_{\mathrm{posterior}})$             | We can sample from $Q_\phi$ and evaluate the posterior up to its normalizing constant.   |
+| Variational autoencoders                   | Reverse, $D_{\mathrm{KL}}(q_\phi(z\mid x)\parallel p_\theta(z\mid x))$         | The ELBO avoids direct sampling from the intractable true posterior.                     |
+| KL-regularized RL and RLHF                 | Reverse form, $D_{\mathrm{KL}}(\pi_\theta\parallel\pi_{\mathrm{ref}})$         | Samples come from the learned policy, while the reference model scores the same outputs. |
 
-The most classical reverse-KL example is variational inference. A VAE is one instance of it. RLHF also commonly uses a reverse-form KL regularizer relative to a reference policy, although it is not trying to reproduce the reference exactly because reward optimization pulls the learned policy away from it. PPO itself should not be treated as another name for reverse KL.
+The most classical reverse-KL example is [[en/notes/bayesian-and-variational-inference|variational inference]]. A VAE is one instance of it. RLHF also commonly uses a reverse-form KL regularizer relative to a reference policy, although it is not trying to reproduce the reference exactly because reward optimization pulls the learned policy away from it. PPO itself should not be treated as another name for reverse KL.
 
 ### Mathematical properties
 
