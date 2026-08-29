@@ -35,6 +35,65 @@ The expectation is taken under $P$. This means that regions with high probabilit
 
 KL divergence is always nonnegative, and it is zero only when $P$ and $Q$ are the same almost everywhere. It is not symmetric, so $D_{\mathrm{KL}}(P \parallel Q)$ and $D_{\mathrm{KL}}(Q \parallel P)$ usually have different values.
 
+## Forward and reverse KL
+
+Let $P$ be the target distribution and $Q$ be the approximation. The two directions are
+
+$$
+\underbrace{D_{\mathrm{KL}}(P\parallel Q)}_{\text{forward KL}}
+=\mathbb{E}_{x\sim P}\left[\log\frac{p(x)}{q(x)}\right],
+$$
+
+and
+
+$$
+\underbrace{D_{\mathrm{KL}}(Q\parallel P)}_{\text{reverse KL}}
+=\mathbb{E}_{x\sim Q}\left[\log\frac{q(x)}{p(x)}\right].
+$$
+
+Inverting the ratio changes the sign inside the logarithm. If the expectation remained under $P$, the result would only be the negative of forward KL and would not be a divergence. Reverse KL also changes the weighting distribution from $P$ to $Q$. This combination produces its different behavior.
+
+| Direction | Expectation is weighted by | Required support condition | Typical behavior |
+| --- | --- | --- | --- |
+| $D_{\mathrm{KL}}(P\parallel Q)$ | $P$ | $p(x)>0$ requires $q(x)>0$ | Mass-covering |
+| $D_{\mathrm{KL}}(Q\parallel P)$ | $Q$ | $q(x)>0$ requires $p(x)>0$ | Mode-seeking |
+
+For forward KL, a region where $p(x)$ is large but $q(x)$ is close to zero creates a large cost. Missing a mode of $P$ can make the divergence infinite. A region where $p(x)$ is small receives little weight, even if $q(x)$ is relatively large. This makes extra coverage cheap, but not completely free. Probability assigned there must come from somewhere else because $Q$ still has to sum or integrate to one.
+
+For reverse KL, placing probability where $p(x)$ is close to zero creates a large cost. However, if $q(x)$ is close to zero in one of the modes of $P$, that missed mode receives little weight under $Q$. When $Q$ cannot represent every mode, it may prefer one high-density region and ignore the others.
+
+This is why forward KL is often called mass-covering and reverse KL is often called mode-seeking. These labels describe common behavior when a restricted distribution $Q$ approximates a fixed target $P$. They are not universal guarantees for every optimization problem.
+
+### Mathematical properties
+
+Both directions are nonnegative and equal zero only when the two distributions agree almost everywhere. Neither direction is a distance metric because KL is not symmetric and does not satisfy the triangle inequality.
+
+KL divergence is jointly convex in its two distribution arguments. This does not mean that a neural network training objective is convex in its parameters, because the map from parameters to distributions can be nonconvex.
+
+KL also satisfies the data processing inequality. Applying the same deterministic or stochastic transformation to both distributions cannot increase their KL divergence. Coarse observations can hide differences between distributions, but cannot create new ones.
+
+For joint distributions, KL follows a chain rule:
+
+$$
+D_{\mathrm{KL}}(P(X,Y)\parallel Q(X,Y))
+=D_{\mathrm{KL}}(P(X)\parallel Q(X))
++\mathbb{E}_{x\sim P(X)}\left[
+D_{\mathrm{KL}}(P(Y\mid x)\parallel Q(Y\mid x))
+\right].
+$$
+
+This property allows a sequence-level KL divergence to be decomposed into conditional terms. It is useful for autoregressive models and policies.
+
+Finally, forward and reverse KL become locally similar when $P$ and $Q$ are already close. If $q(x)=p(x)+\varepsilon(x)$, $\int\varepsilon(x)\,dx=0$, and $\varepsilon$ is small compared with $p$, then both directions have the same second-order approximation:
+
+$$
+D_{\mathrm{KL}}(P\parallel Q)
+\approx D_{\mathrm{KL}}(Q\parallel P)
+\approx \frac{1}{2}\int\frac{\varepsilon(x)^2}{p(x)}\,dx.
+$$
+
+Their different behavior becomes important when the distributions are far apart, have different support, or contain several modes.
+
 ## Relationship to cross-entropy
 
 The cross-entropy between $P$ and $Q$ is
@@ -138,3 +197,5 @@ The teacher distribution is fixed, so minimizing this KL divergence is equivalen
 - [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347)
 - [Training language models to follow instructions with human feedback](https://arxiv.org/abs/2203.02155)
 - [Distilling the Knowledge in a Neural Network](https://arxiv.org/abs/1503.02531)
+- [Lecture Notes on Statistics and Information Theory](https://web.stanford.edu/class/stats311/lecture-notes.pdf)
+- [Challenges and Opportunities in High-dimensional Variational Inference](https://arxiv.org/abs/2103.01085)
