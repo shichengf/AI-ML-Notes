@@ -1,6 +1,6 @@
 ---
 title: KL Divergence
-description: Notes on KL divergence in the context of variational autoencoders.
+description: The direction, optimization meaning, and useful behavior of KL divergence.
 tags:
   - ml/information-theory
   - dl/vae
@@ -32,8 +32,6 @@ D_{\mathrm{KL}}(P \parallel Q)
 $$
 
 The expectation is taken under $P$. This means that regions with high probability under $P$ receive more weight. If $p(x)>0$ but $q(x)=0$, the KL divergence is infinite.
-
-KL divergence is always nonnegative, and it is zero only when $P$ and $Q$ are the same almost everywhere. It is not symmetric, so $D_{\mathrm{KL}}(P \parallel Q)$ and $D_{\mathrm{KL}}(Q \parallel P)$ usually have different values.
 
 ## Forward and reverse KL
 
@@ -76,14 +74,7 @@ D_{\mathrm{KL}}(P\parallel Q)
 -\mathbb{E}_{x\sim P}[\log q(x)].
 $$
 
-The first term does not depend on $Q$. Therefore, samples $x_i\sim P$ are enough to estimate the part that matters for optimization:
-
-$$
--\mathbb{E}_{x\sim P}[\log q(x)]
-\approx -\frac{1}{N}\sum_{i=1}^{N}\log q(x_i).
-$$
-
-This is why maximum likelihood and supervised cross-entropy usually have the forward direction. They strongly penalize the case where the data distribution has high probability but the model assigns low probability.
+The first term does not depend on $Q$. Samples from $P$ are enough to estimate the second term. This is why maximum likelihood and supervised cross-entropy usually have the forward direction. They strongly penalize the case where the data distribution has high probability but the model assigns low probability.
 
 Reverse KL is natural in a different computational setting. Suppose we can sample from $Q$, while the target is known only through an unnormalized density
 
@@ -112,13 +103,9 @@ The unknown normalizing constant $\log Z$ does not depend on $Q$. We can therefo
 | Variational autoencoders                   | Reverse, $D_{\mathrm{KL}}(q_\phi(z\mid x)\parallel p_\theta(z\mid x))$         | The ELBO avoids direct sampling from the intractable true posterior.                     |
 | KL-regularized RL and RLHF                 | Reverse form, $D_{\mathrm{KL}}(\pi_\theta\parallel\pi_{\mathrm{ref}})$         | Samples come from the learned policy, while the reference model scores the same outputs. |
 
-The most classical reverse-KL example is [[en/notes/bayesian-and-variational-inference|variational inference]]. A VAE is one instance of it. RLHF also commonly uses a reverse-form KL regularizer relative to a reference policy, although it is not trying to reproduce the reference exactly because reward optimization pulls the learned policy away from it. PPO itself should not be treated as another name for reverse KL.
+For the mechanics of the classic reverse-KL case, see [[en/notes/bayesian-and-variational-inference|Bayesian Inference and Variational Inference]]. PPO itself should not be treated as another name for reverse KL.
 
-### Mathematical properties
-
-Both directions are nonnegative and equal zero only when the two distributions agree almost everywhere. Neither direction is a distance metric because KL is not symmetric and does not satisfy the triangle inequality.
-
-KL divergence is jointly convex in its two distribution arguments. This does not mean that a neural network training objective is convex in its parameters, because the map from parameters to distributions can be nonconvex.
+### Useful properties
 
 KL also satisfies the data processing inequality. Applying the same deterministic or stochastic transformation to both distributions cannot increase their KL divergence. Coarse observations can hide differences between distributions, but cannot create new ones.
 
@@ -166,85 +153,24 @@ $$
 
 When $P$ is the fixed target distribution, $H(P)$ is constant. Changing $Q$ only changes the KL divergence term. Therefore, minimizing cross-entropy with respect to $Q$ is equivalent to minimizing $D_{\mathrm{KL}}(P \parallel Q)$. If the model can represent $P$, the minimum is reached when $Q=P$. If it cannot, training selects the available $Q$ with the smallest KL divergence from $P$.
 
-## Relationship to likelihood
-
-Suppose the data follow an unknown distribution $P_{\mathrm{data}}$, and a model assigns probability or density $q_\theta(x)$. For observed data $x_1,\ldots,x_N$, the likelihood is
+For observed samples $x_1,\ldots,x_N$, the model likelihood is
 
 $$
 L(\theta)=\prod_{i=1}^{N}q_\theta(x_i).
 $$
 
-The data are fixed, so the likelihood is viewed as a function of the model parameters $\theta$. Maximum likelihood estimation is
+Its average negative log-likelihood is the sample estimate of cross-entropy:
 
 $$
-\theta_{\mathrm{MLE}}
-=\arg\max_\theta \sum_{i=1}^{N}\log q_\theta(x_i)
-=\arg\min_\theta \left[-\frac{1}{N}\sum_{i=1}^{N}\log q_\theta(x_i)\right].
+-\frac{1}{N}\log L(\theta)
+=-\frac{1}{N}\sum_{i=1}^{N}\log q_\theta(x_i).
 $$
 
-The expression on the right is the empirical negative log-likelihood. It estimates the population cross-entropy
-
-$$
-\mathbb{E}_{x\sim P_{\mathrm{data}}}[-\log q_\theta(x)]
-=H(P_{\mathrm{data}},Q_\theta)
-=H(P_{\mathrm{data}})+D_{\mathrm{KL}}(P_{\mathrm{data}}\parallel Q_\theta).
-$$
-
-Because $P_{\mathrm{data}}$ is fixed, its entropy does not depend on $\theta$. In expectation, maximizing likelihood is therefore equivalent to minimizing the forward KL divergence from the data distribution to the model distribution.
-
-## Common applications
-
-### Variational autoencoders
-
-A VAE maximizes the evidence lower bound
-
-$$
-\mathcal{L}_{\mathrm{ELBO}}(x)
-=\mathbb{E}_{q_\phi(z\mid x)}[\log p_\theta(x\mid z)]
--D_{\mathrm{KL}}\left(q_\phi(z\mid x)\parallel p(z)\right).
-$$
-
-The first term rewards reconstruction likelihood. The KL term keeps the approximate posterior $q_\phi(z\mid x)$ close to the prior $p(z)$. This regularizes the latent space and makes sampling from the prior useful. The same objective also reduces the gap between the approximate posterior and the true posterior:
-
-$$
-\log p_\theta(x)-\mathcal{L}_{\mathrm{ELBO}}(x)
-=D_{\mathrm{KL}}\left(q_\phi(z\mid x)\parallel p_\theta(z\mid x)\right).
-$$
-
-### PPO and RLHF
-
-In RLHF, a KL penalty is often used to keep the learned policy $\pi_\theta$ close to a reference policy $\pi_{\mathrm{ref}}$:
-
-$$
-\max_\theta\;\mathbb{E}_{y\sim\pi_\theta(\cdot\mid x)}[r(x,y)]
--\beta D_{\mathrm{KL}}\left(\pi_\theta(\cdot\mid x)\parallel\pi_{\mathrm{ref}}(\cdot\mid x)\right).
-$$
-
-The reward encourages preferred outputs. The KL term limits how far the policy can move from the reference model. This helps preserve useful language behavior when the reward model is imperfect.
-
-PPO itself usually controls policy updates with a clipped probability ratio between the new and old policies. This clipped objective is not the same as a KL penalty. PPO implementations may also monitor KL divergence or stop an update when it becomes too large. In RLHF, the additional KL term usually compares the learned policy with a fixed reference model.
-
-### Knowledge distillation
-
-Knowledge distillation trains a student distribution to match a teacher distribution. With temperature $\tau$, a common distillation loss is
-
-$$
-\mathcal{L}_{\mathrm{distill}}
-=\tau^2 D_{\mathrm{KL}}\left(
-p_{\mathrm{teacher}}^{(\tau)}(\cdot\mid x)
-\parallel
-q_{\mathrm{student}}^{(\tau)}(\cdot\mid x)
-\right).
-$$
-
-The teacher distribution is fixed, so minimizing this KL divergence is equivalent to minimizing cross-entropy with the teacher's soft predictions as targets. A higher temperature exposes relative probabilities among classes. These soft targets can transfer more information than a single hard label.
-
-## Questions to revisit
+Maximizing likelihood, minimizing negative log-likelihood, minimizing cross-entropy, and minimizing forward KL are therefore the same optimization problem when the data distribution is fixed.
 
 ## References
 
 - [Auto-Encoding Variational Bayes](https://arxiv.org/abs/1312.6114)
-- [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347)
 - [Training language models to follow instructions with human feedback](https://arxiv.org/abs/2203.02155)
 - [Distilling the Knowledge in a Neural Network](https://arxiv.org/abs/1503.02531)
 - [Lecture Notes on Statistics and Information Theory](https://web.stanford.edu/class/stats311/lecture-notes.pdf)

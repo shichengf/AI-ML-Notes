@@ -22,12 +22,12 @@ Bayesian inference is a framework for updating uncertainty after observing data.
 
 ## Prior, likelihood, evidence, and posterior
 
-| Quantity | Meaning |
-| --- | --- |
-| Prior, $p(z)$ | What the model assumes about $z$ before observing $x$. |
-| Likelihood, $p_\theta(x\mid z)$ | How likely the observed data are for a given value of $z$. |
-| Evidence, $p_\theta(x)$ | The total probability or density assigned to $x$ after considering every possible $z$. |
-| Posterior, $p_\theta(z\mid x)$ | The updated distribution of $z$ after observing $x$. |
+| Quantity                        | Meaning                                                                                |
+| ------------------------------- | -------------------------------------------------------------------------------------- |
+| Prior, $p(z)$                   | What the model assumes about $z$ before observing $x$.                                 |
+| Likelihood, $p_\theta(x\mid z)$ | How likely the observed data are for a given value of $z$.                             |
+| Evidence, $p_\theta(x)$         | The total probability or density assigned to $x$ after considering every possible $z$. |
+| Posterior, $p_\theta(z\mid x)$  | The updated distribution of $z$ after observing $x$.                                   |
 
 Bayes' rule connects them:
 
