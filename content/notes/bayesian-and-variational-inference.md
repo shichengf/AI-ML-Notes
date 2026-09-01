@@ -1,88 +1,137 @@
 ---
 title: 贝叶斯推断与变分推断
-description: 先验、似然、后验与变分近似的基础关系。
+description: 从后验为什么难算出发，理解变分推断为什么会出现在 VAE 中。
 tags:
   - ml/bayesian-inference
   - ml/variational-inference
   - dl/vae
 lang: zh-CN
-status: seedling
+status: growing
 publish: true
 created: 2026-08-28
 ---
 
 # 贝叶斯推断与变分推断
 
-## 基本问题
+这篇笔记只解决一个问题：
 
-贝叶斯推断是一种在观察数据以后更新不确定性的框架。设 $x$ 是已经观察到的数据，$z$ 是未知量。在不同模型中，$z$ 可以是参数、潜在表示或隐藏状态。
+> 已经看到数据 $x$，但真正关心的是生成它的隐藏原因 $z$。怎样推断 $z$，又怎样训练这个生成模型？
 
-> [!important] 核心思想
-> 先验描述观察 $x$ 以前对 $z$ 的认识。后验描述利用 $x$ 中的信息以后对 $z$ 的认识。
+VAE 正好包含这个问题。理解它以后，先验、后验和变分推断就不再是彼此分离的名词。
 
-## 先验、似然、证据与后验
+## 先分清 $z$、$\theta$ 和 $\phi$
 
-| 名称 | 含义 |
+| 符号 | 在 VAE 中表示什么 |
 | --- | --- |
-| 先验，$p(z)$ | 观察 $x$ 以前，模型对 $z$ 的假设。 |
-| 似然，$p_\theta(x\mid z)$ | 给定 $z$ 时，当前观测数据出现的可能性。 |
-| 证据，$p_\theta(x)$ | 考虑所有可能的 $z$ 以后，模型分配给 $x$ 的总概率或概率密度。 |
-| 后验，$p_\theta(z\mid x)$ | 观察 $x$ 以后，对 $z$ 得到的更新分布。 |
+| $x$ | 已经观察到的数据。例如一张手写数字图片。 |
+| $z$ | 单个样本背后的潜变量。例如字体粗细、倾斜程度和数字类别等隐藏因素。 |
+| $\theta$ | 生成模型的参数。在 VAE 中，它们主要是 decoder 神经网络的权重。 |
+| $\phi$ | 推断模型的参数。在 VAE 中，它们主要是 encoder 神经网络的权重。 |
 
-贝叶斯公式把它们连接起来：
+$z$ 和 $\theta$ 的角色完全不同。每张图片都有自己的 $z$，而整个数据集共用一套 $\theta$。训练时会更新 $\theta$。给定一张新图片时，我们想推断它对应的 $z$。
+
+### $p_\theta$ 到底是什么意思
+
+$p_\theta$ 不是 $p$ 乘以 $\theta$。它表示“由参数 $\theta$ 控制的概率分布”。
+
+例如，decoder 接收 $z$，输出一张图片的均值 $\mu_\theta(z)$。我们可以定义
+
+$$
+p_\theta(x\mid z)
+=\mathcal{N}\left(x;\mu_\theta(z),\sigma^2 I\right).
+$$
+
+这条公式的意思是：
+
+> 给定潜变量 $z$，decoder 先算出它应该生成什么样的图片。真实图片 $x$ 允许在这个结果附近有一些噪声。
+
+改变神经网络权重 $\theta$，函数 $\mu_\theta(z)$ 会改变，整个条件分布 $p_\theta(x\mid z)$ 也会改变。
+
+$p_\theta(z\mid x)$ 则表示同一个生成模型所隐含的真实后验。它回答的是另一个方向的问题：
+
+> 已经看到图片 $x$，哪些 $z$ 最可能生成它？
+
+这里的 $p_\theta(z\mid x)$ 不是我们已经拥有的另一个神经网络。它是由先验 $p(z)$ 和 decoder $p_\theta(x\mid z)$ 通过贝叶斯公式共同决定的分布。
+
+## 从生成方向看，事情很简单
+
+VAE 假设数据按照下面的过程产生：
+
+$$
+z\sim p(z),\qquad x\sim p_\theta(x\mid z).
+$$
+
+通常把 $p(z)$ 设为标准正态分布。生成一张新图片时，只需要：
+
+1. 从 $p(z)$ 采样一个 $z$。
+2. 把 $z$ 输入 decoder。
+3. 根据 $p_\theta(x\mid z)$ 生成 $x$。
+
+这个方向从隐藏原因走向观测结果，所以容易执行。
+
+训练时遇到的是反方向。数据集只给了我们 $x$，没有告诉我们生成每个 $x$ 的 $z$。我们需要计算后验
 
 $$
 p_\theta(z\mid x)
 =\frac{p_\theta(x\mid z)p(z)}{p_\theta(x)}.
 $$
 
-### 怎么读贝叶斯公式
+分子给每个候选 $z$ 一个分数：
 
-先看竖线两边，再看下标：
+$$
+p_\theta(x\mid z)p(z).
+$$
 
-| 符号 | 它表示什么 |
-| --- | --- |
-| $x$ | 已经观察到的数据。计算后验时，$x$ 被当作已知条件。 |
-| $z$ | 想要推断的未知量。它可以是参数、潜变量或隐藏状态。 |
-| $p(z)$ | $z$ 的先验分布。这里没有条件竖线，因为它描述看到 $x$ 以前的认识。 |
-| $p_\theta(x\mid z)$ | 给定 $z$ 时，$x$ 出现的可能性。竖线左边是正在讨论的变量，右边是已经给定的条件。 |
-| $p_\theta(z\mid x)$ | 给定观测 $x$ 以后，$z$ 的后验分布。它与 $p_\theta(x\mid z)$ 的条件方向不同。 |
-| 下标 $\theta$ | 控制模型分布的参数。相同的 $\theta$ 表示这些概率来自同一个生成模型。它不是新的随机变量。 |
-| $p_\theta(x)$ | 证据，也叫边缘似然。它汇总所有可能的 $z$ 对观测 $x$ 的解释。 |
-| $\int \cdots dz$ | 对所有可能的 $z$ 进行积分。末尾的 $dz$ 说明积分变量是 $z$。离散情况下会写成对 $z$ 求和。 |
-| $\propto$ | 表示“成比例”。等式中省略了不随 $z$ 改变的归一化常数。这里省略的就是 $p_\theta(x)$。 |
+$p(z)$ 检查这个 $z$ 原本是否合理。$p_\theta(x\mid z)$ 检查这个 $z$ 能否通过 decoder 解释当前的 $x$。两项都高的 $z$ 应该获得较高的后验概率。
 
-> [!tip] 一句话读法
-> 已知 $x$ 以后，一个 $z$ 的后验概率取决于两件事：它原来是否合理，以及它能否解释当前的 $x$。分母把所有候选 $z$ 的结果归一化。
+## 后验为什么难处理
 
-证据是
+难点在分母
 
 $$
 p_\theta(x)
 =\int p_\theta(x\mid z)p(z)\,dz.
 $$
 
-分子同时考虑两件事。一个 $z$ 在观察数据以前是否合理，以及它能否解释当前的 $x$。分母负责让后验积分为 1。
+它需要把所有可能的 $z$ 对 $x$ 的解释都加起来，然后才能把分子归一化。
 
-## 为什么后验很难处理
+如果 $z$ 只有三个可能值，对应的未归一化分数是 $2$、$5$ 和 $3$，事情很简单。把它们除以总和 $10$，后验就是 $0.2$、$0.5$ 和 $0.3$。
 
-困难通常来自证据 $p_\theta(x)$。计算它需要对所有可能的 $z$ 进行积分。如果 $z$ 是高维变量，而且 $p_\theta(x\mid z)$ 由非线性神经网络定义，这个积分通常没有简单的闭式解。
+VAE 中的 $z$ 通常是连续的多维向量。即使只有 20 个维度，也有无限多个可能值。decoder 又是非线性神经网络，所以这个高维积分通常没有可以直接计算的公式。
 
-未归一化的后验仍然可以计算：
+这造成两个具体问题：
+
+1. 对一个给定的 $z$，我们可以计算 $p_\theta(x\mid z)p(z)$。但我们不知道所有候选 $z$ 的总分，因此得不到归一化后的后验密度。
+2. 训练 decoder 需要提高数据的概率 $\log p_\theta(x)$。这个量本身也包含同一个难算的积分。
+
+知道未归一化分数，并不等于能够直接得到相互独立的后验样本。MCMC 可以只使用未归一化密度，但它通常需要为每个 $x$ 运行一段采样过程。VAE 希望用神经网络对大量数据进行快速训练，因此需要另一种办法。
+
+## 变分推断做了什么
+
+变分推断不再强求直接计算 $p_\theta(z\mid x)$。它另外构造一个容易计算和采样的分布
 
 $$
-p_\theta(z\mid x)\propto p_\theta(x\mid z)p(z).
+q_\phi(z\mid x),
 $$
 
-我们可以为一个给定的 $z$ 计算右侧，但很难直接从归一化后的后验得到相互独立的样本。MCMC 不需要知道归一化常数也可以采样，但速度可能较慢，得到的样本之间也可能存在相关性。面对多峰后验时，MCMC 还可能难以在不同模式之间移动。
+并让它逼近真实后验。
 
-## 变分推断
-
-变分推断使用容易处理的分布 $q_\phi(z\mid x)$ 近似困难的后验。我们先选择一个分布族 $\mathcal{Q}$，然后求解
+在 VAE 中，$q_\phi(z\mid x)$ 就是 encoder 定义的分布。常见选择是对角高斯：
 
 $$
-q_\phi^*(z\mid x)
-=\arg\min_{q_\phi\in\mathcal{Q}}
+q_\phi(z\mid x)
+=\mathcal{N}\left(
+z;\mu_\phi(x),
+\operatorname{diag}(\sigma_\phi^2(x))
+\right).
+$$
+
+encoder 的权重是 $\phi$。输入一张图片 $x$ 后，它输出这张图片对应的 $\mu_\phi(x)$ 和 $\sigma_\phi(x)$。因此，每个 $x$ 都会得到自己的高斯分布，但所有图片共用同一个 encoder 和同一套参数 $\phi$。
+
+理想目标是
+
+$$
+\min_\phi
 D_{\mathrm{KL}}\left(
 q_\phi(z\mid x)
 \parallel
@@ -90,91 +139,141 @@ p_\theta(z\mid x)
 \right).
 $$
 
-### 怎么读变分推断的公式
+它的直觉很直接：
 
-| 符号 | 它表示什么 |
-| --- | --- |
-| $p_\theta(z\mid x)$ | 想要逼近的真实后验。$\theta$ 是生成模型的参数。 |
-| $q_\phi(z\mid x)$ | 用来逼近后验的分布。字母 $q$ 表示它是另一个分布，$\phi$ 是近似模型的参数。 |
-| $\mathcal{Q}$ | 允许选择的近似分布族。例如，所有具有对角协方差的高斯分布。花体大写字母表示一组分布。 |
-| $q_\phi\in\mathcal{Q}$ | 当前的近似分布必须属于选定的分布族 $\mathcal{Q}$。符号 $\in$ 表示“属于”。 |
-| $\arg\min$ | 找到“让后面目标最小的那个对象”。这里返回的是最合适的 $q_\phi$，不是最小的 KL 数值。 |
-| 上标 $*$ | 表示优化以后得到的最佳选择，所以 $q_\phi^*$ 是当前分布族中最好的近似。 |
-| $\mathbb{E}_{q_\phi(z\mid x)}$ | 按照 $q_\phi(z\mid x)$ 采样并取平均。写在期望符号下方的分布决定由谁提供权重。 |
-| $\mathcal{L}_{\mathrm{ELBO}}$ | $\mathcal{L}$ 表示训练目标。下标 $\mathrm{ELBO}$ 是目标的名字，意思是 evidence lower bound。 |
+> 调整 encoder 的参数 $\phi$，让 encoder 给出的分布尽量接近生成模型真正隐含的后验。
 
-> [!tip] 一句话读法
-> 在容易处理的分布族 $\mathcal{Q}$ 中寻找一个 $q_\phi$，让它与难以直接计算的后验 $p_\theta(z\mid x)$ 尽量接近。
+这里使用 Reverse KL。我们可以从 $q_\phi(z\mid x)$ 采样，也可以计算它的密度。关于两个 KL 方向的差别，可以参考 [[notes/kl-divergence|KL 散度]]。
 
-这是一个 Reverse KL 目标。期望由 $q_\phi$ 加权，而它正是我们知道如何采样的分布。关于 KL 方向的区别，可以参考 [[notes/kl-divergence|KL 散度]]。
+## 不知道真实后验，怎样最小化 KL
 
-## 从 Reverse KL 到 ELBO
+把贝叶斯公式写成对数形式：
 
-直接写出后验似乎仍然需要未知的证据。展开 KL 以后，可以看到为什么这不是问题：
+$$
+\log p_\theta(z\mid x)
+=\log p_\theta(x,z)-\log p_\theta(x).
+$$
+
+代入 KL：
 
 $$
 \begin{aligned}
 D_{\mathrm{KL}}\left(q_\phi(z\mid x)\parallel p_\theta(z\mid x)\right)
-&=\mathbb{E}_{q_\phi}\left[
+&=\mathbb{E}_{q_\phi(z\mid x)}
+\left[
 \log q_\phi(z\mid x)-\log p_\theta(x,z)
 \right]
-+\log p_\theta(x)\\
-&=\log p_\theta(x)-\mathcal{L}_{\mathrm{ELBO}}(x).
++\log p_\theta(x).
 \end{aligned}
 $$
 
-证据 $\log p_\theta(x)$ 不依赖变分参数 $\phi$。因此，最小化 KL 等价于最大化
-
-$$
-\mathcal{L}_{\mathrm{ELBO}}(x)
-=\mathbb{E}_{q_\phi(z\mid x)}\left[
-\log p_\theta(x,z)-\log q_\phi(z\mid x)
-\right].
-$$
-
-它被称为下界，因为
+移项以后得到
 
 $$
 \log p_\theta(x)
 =\mathcal{L}_{\mathrm{ELBO}}(x)
-+D_{\mathrm{KL}}\left(q_\phi(z\mid x)\parallel p_\theta(z\mid x)\right)
-\geq \mathcal{L}_{\mathrm{ELBO}}(x).
++D_{\mathrm{KL}}\left(
+q_\phi(z\mid x)\parallel p_\theta(z\mid x)
+\right),
 $$
 
-## 与变分自编码器的关系
-
-在 VAE 中，encoder 会产生一个容易处理的近似后验。常见选择是
-
-$$
-q_\phi(z\mid x)
-=\mathcal{N}\left(
-\mu_\phi(x),
-\operatorname{diag}(\sigma_\phi^2(x))
-\right).
-$$
-
-Decoder 定义似然 $p_\theta(x\mid z)$。ELBO 可以写成
+其中
 
 $$
 \mathcal{L}_{\mathrm{ELBO}}(x)
-=\mathbb{E}_{q_\phi(z\mid x)}[\log p_\theta(x\mid z)]
--D_{\mathrm{KL}}\left(q_\phi(z\mid x)\parallel p(z)\right).
+=\mathbb{E}_{q_\phi(z\mid x)}
+\left[
+\log p_\theta(x,z)-\log q_\phi(z\mid x)
+\right].
 $$
 
-第一项要求采样得到的潜变量能够解释观测。第二项让近似后验保持接近先验。
+这组公式表达了三个重要事实：
 
-## 近似可能遗漏什么
+1. $\log p_\theta(x)$ 是我们真正想提高的数据概率。
+2. KL 是近似后验与真实后验之间的误差，而且不会小于零。
+3. ELBO 等于数据概率减去这个误差，所以它是 $\log p_\theta(x)$ 的下界。
 
-变分推断把推断问题转化为优化问题，通常比为每个观测运行新的采样过程更快。最终结果会受到分布族 $\mathcal{Q}$ 的限制。简单的高斯分布无法表示所有后验形状。当真实后验有多个模式时，Reverse KL 还可能只关注其中一个模式，并低估不确定性。
+真实后验出现在关系式中，但计算 ELBO 只需要 $q_\phi(z\mid x)$、$p(z)$ 和 $p_\theta(x\mid z)$。这三个量我们都能计算或采样。因此，我们可以最大化 ELBO，绕开难算的 $p_\theta(x)$ 和 $p_\theta(z\mid x)$。
 
-## 后续问题
+## 为什么 VAE 必须用到变分推断
 
-- 什么是 mean-field 变分推断？
-- 变分推断与 MCMC 有什么区别？
-- VAE 中的 amortized inference 增加了什么？
-- Reparameterization trick 为什么可以用于梯度训练？
+VAE 想学习一个带潜变量的生成模型
+
+$$
+p_\theta(x,z)=p_\theta(x\mid z)p(z).
+$$
+
+如果能够精确计算后验，我们可以推断每个样本的 $z$，也可以直接优化数据似然。但神经网络 decoder 让后验和边缘似然通常无法精确计算。
+
+变分推断同时解决了这两个问题：
+
+| VAE 需要什么 | 变分推断提供什么 |
+| --- | --- |
+| 根据 $x$ 推断潜变量 $z$ | encoder 给出近似后验 $q_\phi(z\mid x)$ |
+| 训练生成模型 $p_\theta(x\mid z)$ | ELBO 提供一个可以计算的训练目标 |
+
+变分推断中的 “variational” 指的是在一组候选分布中寻找最合适的分布。在 VAE 中，这个候选分布由 encoder 和参数 $\phi$ 表示。“autoencoder” 则来自 encoder 与 decoder 的网络结构。
+
+因此，VAE 不是在普通 autoencoder 上随意添加一个 KL 项。它先是一个后验难算的潜变量生成模型，然后才用 encoder 和 ELBO 把推断与训练变成可计算的问题。
+
+### VAE 的目标为什么有两项
+
+利用
+
+$$
+p_\theta(x,z)=p_\theta(x\mid z)p(z),
+$$
+
+ELBO 可以整理成
+
+$$
+\mathcal{L}_{\mathrm{ELBO}}(x)
+=
+\underbrace{
+\mathbb{E}_{q_\phi(z\mid x)}
+\left[\log p_\theta(x\mid z)\right]
+}_{\text{让 }z\text{ 能解释 }x}
+-
+\underbrace{
+D_{\mathrm{KL}}\left(q_\phi(z\mid x)\parallel p(z)\right)
+}_{\text{让编码分布接近先验}}.
+$$
+
+第一项通常被叫作 reconstruction term。更准确地说，它是 decoder 对观测 $x$ 给出的期望对数似然。只有选择特定的观测分布以后，它才会变成熟悉的 MSE 或 binary cross entropy。
+
+第二项让每个样本的编码分布不要随意散落在潜空间中。训练完成后，我们希望从统一的先验 $p(z)$ 采样并生成合理数据。如果 encoder 把样本编码到先验几乎不会出现的区域，从先验采样时就很难落到这些区域。
+
+### 一次训练具体发生什么
+
+对于一张图片 $x$：
+
+1. Encoder 计算 $\mu_\phi(x)$ 和 $\sigma_\phi(x)$。
+2. 采样 $\epsilon\sim\mathcal N(0,I)$，再令
+
+$$
+z=\mu_\phi(x)+\sigma_\phi(x)\odot\epsilon.
+$$
+
+3. Decoder 用 $z$ 计算 $p_\theta(x\mid z)$。
+4. 使用 ELBO 同时更新 $\phi$ 和 $\theta$。
+
+第二步是 reparameterization trick。随机性被移到 $\epsilon$，所以梯度仍然可以通过 $z$ 传回 encoder。
+
+这里的 encoder 不是在记住一张图片对应的固定 $z$。它学习的是一个从任意 $x$ 到近似后验分布的共享映射。这叫 amortized inference。训练完成后，新样本只需要经过一次 encoder，就能得到近似后验，不必重新运行一轮迭代推断。
+
+## 最后把角色连起来
+
+| 对象 | 作用 |
+| --- | --- |
+| $p(z)$ | 规定生成时从哪里采样潜变量。 |
+| $p_\theta(x\mid z)$ | Decoder。把潜变量变成数据分布。 |
+| $p_\theta(z\mid x)$ | 生成模型隐含的真实后验。我们想要它，但通常算不出来。 |
+| $q_\phi(z\mid x)$ | Encoder。用容易处理的分布近似真实后验。 |
+| ELBO | 不直接计算真实后验，也能同时训练 encoder 和 decoder 的目标。 |
+
+变分推断的核心不是“用一个高斯替代另一个分布”这么简单。它把一个难以计算的后验推断问题，变成了一个可以用梯度下降训练的优化问题。VAE 则用 encoder 把这套推断过程做成了一次神经网络前向计算。
 
 ## 参考资料
 
-- [Variational Inference: A Review for Statisticians](https://arxiv.org/abs/1601.00670)
 - [Auto-Encoding Variational Bayes](https://arxiv.org/abs/1312.6114)
+- [Variational Inference: A Review for Statisticians](https://arxiv.org/abs/1601.00670)
